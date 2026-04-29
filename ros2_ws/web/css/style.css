@@ -1,0 +1,42 @@
+body {
+  margin: 0;
+  background: black;
+  overflow: hidden;
+}
+
+.face {
+  width: 100vw;
+  height: 100vh;
+  display: flex;
+  justify-content: space-evenly;
+  align-items: center;
+}
+
+/* 👁️ OJO */
+.eye {
+  width: 300px;
+  height: 200px;
+
+  border-radius: 80px;
+
+  --x: 50%;
+  --y: 50%;
+
+  background: radial-gradient(
+    circle at var(--x) var(--y),
+    #1fd6e0 0%,
+    #19b6c2 40%,
+    #0a4a55 80%,
+    #000 100%
+  );
+
+  position: relative;
+
+  box-shadow:
+    0 0 30px rgba(0,255,255,0.3),
+    0 0 80px rgba(0,255,255,0.15);
+
+  overflow: hidden;
+
+  transition: filter 0.2s ease, box-shadow 0.2s ease;
+}

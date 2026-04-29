@@ -1,0 +1,19 @@
+# Entornos y claves
+.env
+*.env
+keys.env
+
+# Python
+__pycache__/
+*.pyc
+
+# ROS2
+build/
+install/
+log/
+
+# VSCode / editor
+.vscode/
+
+# Otros
+*.log
