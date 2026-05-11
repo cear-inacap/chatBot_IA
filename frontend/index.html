@@ -8,7 +8,7 @@
 </head>
 <body>
   <main class="stage" aria-label="Cara animada de Inabot">
-    <section class="face" data-emotion="sleepy" aria-live="polite">
+    <section class="face" data-emotion="disconnected" aria-live="polite">
       <div class="eye eye-left" aria-hidden="true">
         <div class="eye-glow"></div>
         <div class="spark spark-a"></div>
@@ -48,7 +48,12 @@
     </section>
 
     <aside class="support-box" aria-label="Mensaje de apoyo">
-      <output class="support-text" data-support-text data-emotion="sleepy"></output>
+      <output class="support-text has-text" data-support-text data-emotion="disconnected">Desconectado</output>
+      <button class="wake-button" type="button" data-wake-button>Despertar</button>
+      <div class="volume-controls" data-volume-controls aria-label="Volumen del equipo">
+        <button class="volume-button" type="button" data-volume-down aria-label="Bajar volumen">-</button>
+        <button class="volume-button" type="button" data-volume-up aria-label="Subir volumen">+</button>
+      </div>
     </aside>
   </main>
 

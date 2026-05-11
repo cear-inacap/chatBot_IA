@@ -1,9 +1,21 @@
 const face = document.querySelector(".face");
 const supportText = document.querySelector("[data-support-text]");
+const wakeButton = document.querySelector("[data-wake-button]");
+const volumeControls = document.querySelector("[data-volume-controls]");
+const volumeDownButton = document.querySelector("[data-volume-down]");
+const volumeUpButton = document.querySelector("[data-volume-up]");
 
 const EYE_SIZE = 1;
-const emotions = new Set(["sleepy", "listening", "thinking", "talking"]);
+const emotions = new Set([
+  "disconnected",
+  "sleepy",
+  "listening",
+  "thinking",
+  "talking",
+]);
 const emotionAliases = new Map([
+  ["offline", "disconnected"],
+  ["disconnect", "disconnected"],
   ["thingking", "thinking"],
   ["think", "thinking"],
   ["listen", "listening"],
@@ -22,12 +34,13 @@ const motion = {
   targetIrisY: 0,
 };
 
-let currentEmotion = "sleepy";
+let currentEmotion = "disconnected";
 let transitionTimer = 0;
 let transitionEndTimer = 0;
 let targetTimer = 0;
 let listeningStep = 0;
 let socketReconnectTimer = 0;
+let socket = null;
 
 document.documentElement.style.setProperty("--eye-size", EYE_SIZE);
 
@@ -41,6 +54,14 @@ function cleanEmotion(value) {
 function updateSupportEmotion(emotion) {
   if (supportText) {
     supportText.dataset.emotion = emotion;
+  }
+
+  if (wakeButton) {
+    wakeButton.classList.toggle("is-visible", emotion === "sleepy");
+  }
+
+  if (volumeControls) {
+    volumeControls.classList.toggle("is-disabled", emotion === "disconnected");
   }
 }
 
@@ -132,9 +153,19 @@ function parseBackendMessage(data) {
   setSupportText(rawMessage);
 }
 
+function sendBackendCommand(command) {
+  if (!socket || socket.readyState !== WebSocket.OPEN) {
+    setSupportText("Conectando...");
+    return;
+  }
+
+  socket.send(JSON.stringify({ command }));
+}
+
 function pickTarget() {
   const ranges = {
     sleepy: [2, 1, 0, 0],
+    disconnected: [1, 0.5, 0, 0],
     listening: [0, 0, 0, 0],
     thinking: [3, 8, 28, 28],
     talking: [0, 0, 0, 0],
@@ -196,6 +227,7 @@ function scheduleTarget() {
   pickTarget();
 
   const delays = {
+    disconnected: 3000,
     sleepy: 2400,
     listening: 2300,
     thinking: 1500,
@@ -212,7 +244,7 @@ function animate() {
   const irisEase = currentEmotion === "listening" ? 0.025 : 0.06;
 
   const sleepyDrift =
-    currentEmotion === "sleepy"
+    ["disconnected", "sleepy"].includes(currentEmotion)
       ? Math.sin(now * 0.0016) * 2
       : 0;
 
@@ -271,19 +303,6 @@ function animate() {
   window.requestAnimationFrame(animate);
 }
 
-window.addEventListener("keydown", (event) => {
-  const keys = {
-    "1": "sleepy",
-    "2": "listening",
-    "3": "thinking",
-    "4": "talking",
-  };
-
-  if (keys[event.key]) {
-    setEmotion(keys[event.key]);
-  }
-});
-
 function connectWebSocket() {
   const protocol =
     window.location.protocol === "https:"
@@ -291,25 +310,18 @@ function connectWebSocket() {
       : "ws:";
 
   const host = window.location.hostname || "localhost";
-  let socketWasOpen = false;
 
-  const socket = new WebSocket(
+  socket = new WebSocket(
     `${protocol}//${host}:8765`
   );
-
-  socket.addEventListener("open", () => {
-    socketWasOpen = true;
-    setEmotion("listening");
-  });
 
   socket.addEventListener("message", (event) =>
     parseBackendMessage(event.data)
   );
 
   socket.addEventListener("close", () => {
-    if (socketWasOpen) {
-      setEmotion("sleepy");
-    }
+    setEmotion("disconnected");
+    setSupportText("Desconectado");
 
     window.clearTimeout(socketReconnectTimer);
     socketReconnectTimer = window.setTimeout(connectWebSocket, 1600);
@@ -320,10 +332,30 @@ function connectWebSocket() {
   );
 }
 
+if (wakeButton) {
+  wakeButton.addEventListener("click", () => {
+    setSupportText("Despertando...");
+    sendBackendCommand("wake");
+  });
+}
+
+if (volumeDownButton) {
+  volumeDownButton.addEventListener("click", () =>
+    sendBackendCommand("volume_down")
+  );
+}
+
+if (volumeUpButton) {
+  volumeUpButton.addEventListener("click", () =>
+    sendBackendCommand("volume_up")
+  );
+}
+
 try {
   connectWebSocket();
 } catch (error) {
-  setEmotion("sleepy");
+  setEmotion("disconnected");
+  setSupportText("Desconectado");
 }
 
 window.setEmotion = setEmotion;
