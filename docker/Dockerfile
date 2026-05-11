@@ -13,7 +13,11 @@ RUN apt update && apt upgrade -y && \
     python3-pip \
     python3-venv \
     alsa-utils \
+    pulseaudio-utils \
     libasound2-dev \
+    portaudio19-dev \
+    libsndfile1 \
+    ffmpeg \
     git \
     curl \
     nano \
@@ -27,7 +31,10 @@ RUN pip install --no-cache-dir --break-system-packages \
     azure-cognitiveservices-speech \
     openai \
     python-dotenv \
-    websocket-client
+    websockets \
+    numpy \
+    sounddevice \
+    soundfile
 
 # ==============================
 # 📁 WORKDIR
