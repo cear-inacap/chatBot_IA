@@ -1,30 +1,113 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Inabot Face</title>
-  <link rel="stylesheet" href="style.css" />
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Inabot Eyes</title>
+  <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
-  <div class="face" data-emotion="sleepy">
-    <div class="eye left-eye">
-      <div class="iris"></div>
-    </div>
+  <main class="stage" aria-label="Cara animada de Inabot">
+    <section class="face" data-emotion="sleepy" aria-live="polite">
+      <div class="eye eye-left" aria-hidden="true">
+        <div class="eye-glow"></div>
+        <div class="spark spark-a"></div>
+        <div class="spark spark-b"></div>
+      </div>
 
-    <div class="eye right-eye">
-      <div class="iris"></div>
-    </div>
+      <div class="eye eye-right" aria-hidden="true">
+        <div class="eye-glow"></div>
+        <div class="spark spark-a"></div>
+        <div class="spark spark-b"></div>
+      </div>
 
-    <div class="soundwave">
-      <span></span>
-      <span></span>
-      <span></span>
-      <span></span>
-      <span></span>
-    </div>
-  </div>
+      <div class="emotion-mark" aria-hidden="true"></div>
+      <div class="sleep-z" aria-hidden="true">
+        <span>Z</span>
+        <span>z</span>
+        <span>Z</span>
+        <span>z</span>
+      </div>
+      <div class="thinking-cloud" aria-hidden="true">
+        <span>?</span>
+        <span>?</span>
+        <span>?</span>
+        <span>?</span>
+      </div>
+      <div class="talk-wave" aria-hidden="true">
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+      </div>
+    </section>
 
-  <script src="script.js"></script>
+    <nav class="controls" aria-label="Emociones">
+      <button class="emotion-button is-active" type="button" data-emotion="sleepy">Sleepy</button>
+      <button class="emotion-button" type="button" data-emotion="listening">Listening</button>
+      <button class="emotion-button" type="button" data-emotion="thinking">Thinking</button>
+      <button class="emotion-button" type="button" data-emotion="talking">Talking</button>
+    </nav>
+
+    <aside class="debug-panel" aria-label="Panel temporal de pruebas">
+      <div class="debug-panel__header">
+        <div>
+          <p class="debug-panel__eyebrow">Temporal</p>
+          <h1>Emotion tester</h1>
+        </div>
+        <output class="debug-status" data-debug-status>sleepy</output>
+      </div>
+
+      <div class="debug-grid">
+        <label class="debug-field">
+          <span>Emocion</span>
+          <select data-emotion-select>
+            <option value="sleepy">Sleepy</option>
+            <option value="listening">Listening</option>
+            <option value="thinking">Thinking</option>
+            <option value="talking">Talking</option>
+          </select>
+        </label>
+
+        <label class="debug-field">
+          <span>Desde</span>
+          <select data-transition-from>
+            <option value="sleepy">Sleepy</option>
+            <option value="listening">Listening</option>
+            <option value="thinking">Thinking</option>
+            <option value="talking">Talking</option>
+          </select>
+        </label>
+
+        <label class="debug-field">
+          <span>Hacia</span>
+          <select data-transition-to>
+            <option value="sleepy">Sleepy</option>
+            <option value="listening" selected>Listening</option>
+            <option value="thinking">Thinking</option>
+            <option value="talking">Talking</option>
+          </select>
+        </label>
+
+        <label class="debug-field">
+          <span>Auto ms</span>
+          <input data-cycle-delay type="number" min="600" max="6000" step="100" value="1400">
+        </label>
+      </div>
+
+      <div class="debug-actions">
+        <button type="button" data-apply-emotion>Aplicar</button>
+        <button type="button" data-test-transition>Probar transicion</button>
+        <button type="button" data-cycle-emotions>Auto ciclo</button>
+      </div>
+    </aside>
+  </main>
+
+  <script src="js/eyes.js"></script>
 </body>
 </html>

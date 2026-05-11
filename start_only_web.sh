@@ -3,7 +3,7 @@
 export DISPLAY=:0
 export XAUTHORITY=/home/ar4/.Xauthority
 
-cd /home/ar4/inabot/ros2_ws/web || exit
+cd /home/jetson/proyectos/chatBot_IA/frontend || exit
 
 python3 -m http.server 8000 &
 SERVER_PID=$!
