@@ -1,277 +1,197 @@
-// ======================================
-// 👀 INABOT EYES ENGINE (FINAL STABLE)
-// ======================================
+const face = document.querySelector(".face");
+const buttons = document.querySelectorAll(".emotion-button");
 
-window.addEventListener("DOMContentLoaded", () => {
+const emotions = new Set(["sleepy", "listening", "thinking", "talking"]);
+const motion = {
+  x: 0,
+  y: 0,
+  irisX: 0,
+  irisY: 0,
+  targetX: 0,
+  targetY: 0,
+  targetIrisX: 0,
+  targetIrisY: 0,
+};
 
-  const eyes = document.querySelectorAll('.eye');
+let currentEmotion = "sleepy";
+let transitionTimer = 0;
+let targetTimer = 0;
+let listeningStep = 0;
 
-  // ===============================
-  // ⚙️ ESTADO GLOBAL
-  // ===============================
-  let currentX = 50, currentY = 50;
-  let targetX = 50, targetY = 50;
-  let velocityX = 0, velocityY = 0;
+function cleanEmotion(value) {
+  const emotion = String(value || "").trim().toLowerCase();
+  return emotions.has(emotion) ? emotion : "listening";
+}
 
-  let emotion = "normal";
-  let t = 0;
+function updateButtons(emotion) {
+  buttons.forEach((button) => {
+    button.classList.toggle("is-active", button.dataset.emotion === emotion);
+  });
+}
 
-  // 🔥 suavizado
-  let currentScales = [1, 1];
-  let targetScales = [1, 1];
+function setEmotion(value) {
+  const nextEmotion = cleanEmotion(value);
 
-  // ===============================
-  // 🎯 TARGET MOVIMIENTO
-  // ===============================
-  function pickNewTarget() {
-    if (emotion !== "normal" && emotion !== "listening") return;
-
-    targetX = 20 + Math.random() * 60;
-    targetY = 20 + Math.random() * 60;
-  }
-
-  setInterval(pickNewTarget, 2000);
-
-  // ===============================
-  // 🌊 ONDA
-  // ===============================
-  function getWaveBorderRadius() {
-
-    const amp = 20;
-
-    const a = Math.sin(t * 1.2) * amp;
-    const b = Math.sin(t * 0.9 + 1.3) * amp;
-    const c = Math.sin(t * 1.4 + 0.6) * amp;
-    const d = Math.sin(t * 0.8 + 2.1) * amp;
-
-    return `
-      ${80 + a}px ${80 + b}px
-      ${80 + c}px ${80 + d}px /
-      ${80 + d}px ${80 + c}px
-      ${80 + b}px ${80 + a}px
-    `;
-  }
-
-  // ===============================
-  // 💫 LOOP PRINCIPAL
-  // ===============================
-  function animate() {
-
-    t += 0.05;
-
-    const stiffness = 0.04;
-    const damping = 0.75;
-
-    velocityX += (targetX - currentX) * stiffness;
-    velocityY += (targetY - currentY) * stiffness;
-
-    velocityX *= damping;
-    velocityY *= damping;
-
-    currentX += velocityX;
-    currentY += velocityY;
-
-    // movimiento más grande
-    let moveX = 1.2;
-    let moveY = 0.8;
-
-    const offsetX = (currentX - 50) * moveX;
-    const offsetY = (currentY - 50) * moveY;
-
-    // mover gradiente
-    eyes.forEach(e => {
-      e.style.setProperty('--x', `${currentX}%`);
-      e.style.setProperty('--y', `${currentY}%`);
-    });
-
-    // ===========================
-    // 🎭 TARGET POR ESTADO
-    // ===========================
-    let border = "80px";
-
-    switch (emotion) {
-
-      case "thinking":
-        border = getWaveBorderRadius();
-
-        targetScales[0] = 0.85 + Math.sin(t * 1.2) * 0.02;
-        targetScales[1] = 0.85 + Math.sin(t * 1.2 + 1.2) * 0.02;
-        break;
-
-      case "talking":
-        border = getWaveBorderRadius();
-
-        targetScales[0] = 1 + Math.sin(t * 2) * 0.06;
-        targetScales[1] = 1 + Math.sin(t * 2 + 1.5) * 0.06;
-        break;
-
-      case "sleepy":
-        targetScales = [0.5, 0.5];
-        break;
-
-      case "normal":
-      case "listening":
-      default:
-        targetScales = [1, 1];
-        break;
-    }
-
-    // ===========================
-    // 🔥 INTERPOLACIÓN SUAVE
-    // ===========================
-    const smooth = 0.1;
-
-    currentScales[0] += (targetScales[0] - currentScales[0]) * smooth;
-    currentScales[1] += (targetScales[1] - currentScales[1]) * smooth;
-
-    // ===========================
-    // 🎨 APLICACIÓN FINAL
-    // ===========================
-    eyes.forEach((e, i) => {
-      e.style.borderRadius = border;
-
-      e.style.transform = `
-        translate(${offsetX}px, ${offsetY}px)
-        scale(${currentScales[i]})
-      `;
-    });
-
-    requestAnimationFrame(animate);
-  }
-
-  animate();
-
-  // ===============================
-  // 😴 PARPADEO
-  // ===============================
-  function blink() {
-
-    eyes.forEach(e => {
-      e.style.transform += " scaleY(0.05)";
-    });
-
-    setTimeout(() => {
-      eyes.forEach(e => {
-        e.style.transform = e.style.transform.replace(" scaleY(0.05)", "");
-      });
-    }, 120);
-  }
-
-  function randomBlink() {
-    blink();
-    setTimeout(randomBlink, 3000 + Math.random() * 4000);
-  }
-
-  randomBlink();
-
-  // ===============================
-  // 🎭 CONTROL EMOCIONES
-  // ===============================
-  function setEmotion(newEmotion) {
-
-    console.log("Estado:", newEmotion);
-
-    emotion = newEmotion;
-
-    eyes.forEach(e => {
-      e.style.filter = "";
-      e.style.boxShadow = "";
-    });
-
-    if (newEmotion === "thinking") {
-      eyes.forEach(e => {
-        e.style.filter = "hue-rotate(60deg)";
-      });
-    }
-
-    if (newEmotion === "talking") {
-      eyes.forEach(e => {
-        e.style.filter = "hue-rotate(120deg)";
-        e.style.boxShadow = "0 0 80px rgba(0,255,0,0.4)";
-      });
-    }
-
-    if (newEmotion === "sleepy") {
-      eyes.forEach(e => {
-        e.style.filter = "grayscale(1)";
-      });
-    }
-  }
-
-  window.setEmotion = setEmotion;
-
-  // ===============================
-  // 🌐 WEBSOCKET ROBUSTO
-  // ===============================
-  // ===============================
-// 🌐 WEBSOCKET AUTO-RECONNECT TOTAL
-// ===============================
-
-let ws = null;
-let reconnectDelay = 2000;
-let isConnecting = false;
-
-function connectWebSocket() {
-
-  if (isConnecting) return;
-  isConnecting = true;
-
-  const url = `ws://${window.location.hostname}:8765`;
-  console.log("Intentando conectar a:", url);
-
-  try {
-    ws = new WebSocket(url);
-  } catch (err) {
-    console.log("Error creando WS:", err);
-    retryConnection();
+  if (nextEmotion === currentEmotion && !face.classList.contains("is-transitioning")) {
     return;
   }
 
-  ws.onopen = () => {
-    console.log("WS conectado");
-    isConnecting = false;
-    reconnectDelay = 2000;
+  window.clearTimeout(transitionTimer);
+  face.classList.add("is-transitioning");
 
-    setEmotion("listening");
-  };
+  transitionTimer = window.setTimeout(() => {
+    currentEmotion = nextEmotion;
+    face.dataset.emotion = nextEmotion;
+    updateButtons(nextEmotion);
+    scheduleTarget();
 
-  ws.onmessage = (event) => {
-    console.log("WS:", event.data);
-    setEmotion(event.data);
-  };
-
-  ws.onerror = (err) => {
-    console.log("WS error:", err);
-    // 👇 importante: forzar cierre para activar reconexión
-    ws.close();
-  };
-
-  ws.onclose = () => {
-    console.log("WS cerrado");
-    isConnecting = false;
-
-    setEmotion("sleepy");
-
-    retryConnection();
-  };
+    window.setTimeout(() => {
+      face.classList.remove("is-transitioning");
+    }, 80);
+  }, 170);
 }
 
-// ===============================
-// 🔁 REINTENTO INTELIGENTE
-// ===============================
-function retryConnection() {
+function pickTarget() {
+  const ranges = {
+    sleepy: [2, 1, 0, 0],
+    listening: [0, 0, 0, 0],
+    thinking: [3, 8, 28, 28],
+    talking: [4, 3, 24, 16],
+  };
 
-  console.log("Reintentando en", reconnectDelay / 1000, "seg");
+  const [eyeRangeX, eyeRangeY, irisRangeX, irisRangeY] = ranges[currentEmotion];
 
-  setEmotion("thinking");
+  motion.targetX = (Math.random() - 0.5) * eyeRangeX;
+  motion.targetY = (Math.random() - 0.5) * eyeRangeY;
 
-  setTimeout(() => {
-    reconnectDelay = Math.min(reconnectDelay + 1000, 10000); // backoff
-    connectWebSocket();
-  }, reconnectDelay);
+  if (currentEmotion === "listening") {
+    const eyeScan = [
+      [-8, -2],
+      [6, -3],
+      [10, 2],
+      [2, 5],
+      [-9, 3],
+      [-3, -1],
+    ];
+
+    const irisScan = [
+      [-10, -3],
+      [8, -4],
+      [12, 3],
+      [3, 6],
+      [-11, 4],
+      [-4, -1],
+    ];
+
+    const eyeTarget = eyeScan[listeningStep % eyeScan.length];
+    const irisTarget = irisScan[listeningStep % irisScan.length];
+
+    motion.targetX = eyeTarget[0];
+    motion.targetY = eyeTarget[1];
+    motion.targetIrisX = irisTarget[0];
+    motion.targetIrisY = irisTarget[1];
+
+    listeningStep += 1;
+    return;
+  }
+
+  motion.targetIrisX = (Math.random() - 0.5) * irisRangeX;
+  motion.targetIrisY = (Math.random() - 0.5) * irisRangeY;
 }
 
-// iniciar
-connectWebSocket();
+function scheduleTarget() {
+  window.clearTimeout(targetTimer);
+  pickTarget();
 
+  const delays = {
+    sleepy: 2400,
+    listening: 1800,
+    thinking: 1500,
+    talking: 1200,
+  };
+
+  targetTimer = window.setTimeout(scheduleTarget, delays[currentEmotion]);
+}
+
+function animate() {
+  const now = Date.now();
+
+  const ease = currentEmotion === "listening" ? 0.03 : 0.08;
+  const irisEase = currentEmotion === "listening" ? 0.025 : 0.06;
+
+  const sleepyDrift = currentEmotion === "sleepy"
+    ? Math.sin(now * 0.0016) * 2
+    : 0;
+
+  const talkingBounce = currentEmotion === "talking"
+    ? Math.sin(now * 0.006) * 1.2
+    : 0;
+
+  const listeningSway = currentEmotion === "listening"
+    ? Math.sin(now * 0.0012) * 1.2
+    : 0;
+
+  const lookIntent = currentEmotion === "listening"
+    ? (Math.sin(now * 0.0025) + 1) / 2
+    : 0;
+
+  motion.x += (motion.targetX - motion.x) * ease;
+  motion.y += (motion.targetY - motion.y) * ease;
+  motion.irisX += (motion.targetIrisX - motion.irisX) * irisEase;
+  motion.irisY += (motion.targetIrisY - motion.irisY) * irisEase;
+
+  face.style.setProperty("--eye-x", `${motion.x.toFixed(2)}px`);
+  face.style.setProperty(
+    "--eye-y",
+    `${(motion.y + sleepyDrift + talkingBounce + listeningSway).toFixed(2)}px`
+  );
+
+  face.style.setProperty(
+    "--iris-x",
+    `${(motion.irisX + listeningSway).toFixed(2)}px`
+  );
+
+  face.style.setProperty("--iris-y", `${motion.irisY.toFixed(2)}px`);
+  face.style.setProperty("--look-intent", lookIntent.toFixed(2));
+  face.style.setProperty("--tilt", `${(motion.x * 0.11).toFixed(2)}deg`);
+
+  window.requestAnimationFrame(animate);
+}
+
+buttons.forEach((button) => {
+  button.addEventListener("click", () => setEmotion(button.dataset.emotion));
 });
+
+window.addEventListener("keydown", (event) => {
+  const keys = {
+    "1": "sleepy",
+    "2": "listening",
+    "3": "thinking",
+    "4": "talking",
+  };
+
+  if (keys[event.key]) {
+    setEmotion(keys[event.key]);
+  }
+});
+
+function connectWebSocket() {
+  const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
+  const host = window.location.hostname || "localhost";
+  const socket = new WebSocket(`${protocol}//${host}:8765`);
+
+  socket.addEventListener("open", () => setEmotion("listening"));
+  socket.addEventListener("message", (event) => setEmotion(event.data));
+  socket.addEventListener("close", () => setEmotion("sleepy"));
+  socket.addEventListener("error", () => socket.close());
+}
+
+try {
+  connectWebSocket();
+} catch (error) {
+  setEmotion("sleepy");
+}
+
+window.setEmotion = setEmotion;
+scheduleTarget();
+animate();
