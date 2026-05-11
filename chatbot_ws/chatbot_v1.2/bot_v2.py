@@ -50,6 +50,8 @@ state_lock = threading.Lock()
 
 INACTIVITY_SECONDS = int(os.getenv("INACTIVITY_SECONDS", "4"))
 VOLUME_STEP = int(os.getenv("VOLUME_STEP", "5"))
+VOLUME_MIN = int(os.getenv("VOLUME_MIN", "20"))
+VOLUME_MAX = int(os.getenv("VOLUME_MAX", "85"))
 
 # ============================================
 # 🧠 ESTADOS
@@ -87,25 +89,53 @@ def ejecutar_comando(comando):
         return None
 
 
+def obtener_volumen_actual():
+    resultado = ejecutar_comando([
+        "pactl",
+        "get-sink-volume",
+        "@DEFAULT_SINK@"
+    ])
+
+    if not resultado:
+        return None
+
+    for parte in resultado.stdout.replace("/", " ").split():
+        if parte.endswith("%") and parte[:-1].isdigit():
+            return int(parte[:-1])
+
+    return None
+
+
 def cambiar_volumen(direccion):
     if direccion not in ("up", "down"):
         return
 
-    signo = "+" if direccion == "up" else "-"
-    texto = "Subiendo volumen" if direccion == "up" else "Bajando volumen"
+    volumen_actual = obtener_volumen_actual()
 
-    comandos = [
-        ["amixer", "set", "Master", f"{VOLUME_STEP}%{signo}"],
-        ["amixer", "set", "PCM", f"{VOLUME_STEP}%{signo}"],
-        ["pactl", "set-sink-volume", "@DEFAULT_SINK@", f"{signo}{VOLUME_STEP}%"],
-    ]
+    if volumen_actual is None:
+        enviar_texto("No pude leer el volumen")
+        return
 
-    for comando in comandos:
-        if ejecutar_comando(comando):
-            enviar_texto(texto)
-            return
+    if direccion == "up":
+        volumen_nuevo = min(volumen_actual + VOLUME_STEP, VOLUME_MAX)
+    else:
+        volumen_nuevo = max(volumen_actual - VOLUME_STEP, VOLUME_MIN)
 
-    enviar_texto("No pude cambiar el volumen")
+    if volumen_nuevo == volumen_actual:
+        enviar_texto(f"Volumen {volumen_actual}%")
+        return
+
+    resultado = ejecutar_comando([
+        "pactl",
+        "set-sink-volume",
+        "@DEFAULT_SINK@",
+        f"{volumen_nuevo}%"
+    ])
+
+    if resultado:
+        enviar_texto(f"Volumen {volumen_nuevo}%")
+    else:
+        enviar_texto("No pude cambiar el volumen")
 
 
 def cancelar_timer_sleep():

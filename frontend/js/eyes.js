@@ -63,6 +63,8 @@ function updateSupportEmotion(emotion) {
   if (volumeControls) {
     volumeControls.classList.toggle("is-disabled", emotion === "disconnected");
   }
+
+  updateVolumeButtons();
 }
 
 function setEmotion(value, options = {}) {
@@ -160,6 +162,19 @@ function sendBackendCommand(command) {
   }
 
   socket.send(JSON.stringify({ command }));
+}
+
+function updateVolumeButtons() {
+  const disabled =
+    currentEmotion === "disconnected" ||
+    !socket ||
+    socket.readyState !== WebSocket.OPEN;
+
+  [volumeDownButton, volumeUpButton].forEach((button) => {
+    if (button) {
+      button.disabled = disabled;
+    }
+  });
 }
 
 function pickTarget() {
@@ -315,6 +330,12 @@ function connectWebSocket() {
     `${protocol}//${host}:8765`
   );
 
+  updateVolumeButtons();
+
+  socket.addEventListener("open", () =>
+    updateVolumeButtons()
+  );
+
   socket.addEventListener("message", (event) =>
     parseBackendMessage(event.data)
   );
@@ -322,6 +343,7 @@ function connectWebSocket() {
   socket.addEventListener("close", () => {
     setEmotion("disconnected");
     setSupportText("Desconectado");
+    updateVolumeButtons();
 
     window.clearTimeout(socketReconnectTimer);
     socketReconnectTimer = window.setTimeout(connectWebSocket, 1600);

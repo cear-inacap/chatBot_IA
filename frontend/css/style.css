@@ -576,6 +576,11 @@ body {
     transform 180ms ease;
 }
 
+.volume-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
 .volume-button:hover,
 .volume-button:focus-visible {
   outline: 0;
@@ -583,6 +588,13 @@ body {
   background: rgba(99, 255, 248, 0.1);
   color: #fff;
   transform: translateY(-1px);
+}
+
+.volume-button:disabled:hover {
+  border-color: rgba(217, 255, 253, 0.18);
+  background: rgba(0, 0, 0, 0.24);
+  color: rgba(217, 255, 253, 0.78);
+  transform: none;
 }
 
 @keyframes idle-breathe {
