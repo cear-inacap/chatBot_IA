@@ -1,13 +1,5 @@
 const face = document.querySelector(".face");
-const buttons = document.querySelectorAll(".emotion-button");
-const emotionSelect = document.querySelector("[data-emotion-select]");
-const transitionFromSelect = document.querySelector("[data-transition-from]");
-const transitionToSelect = document.querySelector("[data-transition-to]");
-const cycleDelayInput = document.querySelector("[data-cycle-delay]");
-const applyEmotionButton = document.querySelector("[data-apply-emotion]");
-const testTransitionButton = document.querySelector("[data-test-transition]");
-const cycleEmotionsButton = document.querySelector("[data-cycle-emotions]");
-const debugStatus = document.querySelector("[data-debug-status]");
+const supportText = document.querySelector("[data-support-text]");
 
 const EYE_SIZE = 1;
 const emotions = new Set(["sleepy", "listening", "thinking", "talking"]);
@@ -34,9 +26,7 @@ let currentEmotion = "sleepy";
 let transitionTimer = 0;
 let transitionEndTimer = 0;
 let targetTimer = 0;
-let cycleTimer = 0;
 let listeningStep = 0;
-let isCycling = false;
 let socketReconnectTimer = 0;
 
 document.documentElement.style.setProperty("--eye-size", EYE_SIZE);
@@ -48,23 +38,9 @@ function cleanEmotion(value) {
   return emotions.has(normalized) ? normalized : "";
 }
 
-function updateButtons(emotion) {
-  buttons.forEach((button) => {
-    button.classList.toggle("is-active", button.dataset.emotion === emotion);
-  });
-}
-
-function updateDebugPanel(emotion, label = emotion) {
-  if (emotionSelect) {
-    emotionSelect.value = emotion;
-  }
-
-  if (transitionFromSelect) {
-    transitionFromSelect.value = currentEmotion;
-  }
-
-  if (debugStatus) {
-    debugStatus.value = label;
+function updateSupportEmotion(emotion) {
+  if (supportText) {
+    supportText.dataset.emotion = emotion;
   }
 }
 
@@ -72,7 +48,6 @@ function setEmotion(value, options = {}) {
   const nextEmotion = cleanEmotion(value);
 
   if (!nextEmotion) {
-    updateDebugPanel(currentEmotion, "invalid");
     return false;
   }
 
@@ -80,7 +55,7 @@ function setEmotion(value, options = {}) {
     nextEmotion === currentEmotion &&
     !face.classList.contains("is-transitioning")
   ) {
-    updateDebugPanel(currentEmotion);
+    updateSupportEmotion(currentEmotion);
     return true;
   }
 
@@ -89,7 +64,6 @@ function setEmotion(value, options = {}) {
   face.classList.add("is-transitioning");
   face.dataset.transitionFrom = currentEmotion;
   face.dataset.transitionTo = nextEmotion;
-  updateDebugPanel(currentEmotion, `${currentEmotion} -> ${nextEmotion}`);
 
   transitionTimer = window.setTimeout(() => {
     const previousEmotion = currentEmotion;
@@ -97,9 +71,8 @@ function setEmotion(value, options = {}) {
     currentEmotion = nextEmotion;
     face.dataset.emotion = nextEmotion;
     face.dataset.previousEmotion = previousEmotion;
-    updateButtons(nextEmotion);
+    updateSupportEmotion(nextEmotion);
     scheduleTarget();
-    updateDebugPanel(nextEmotion);
 
     if (typeof options.onDone === "function") {
       options.onDone();
@@ -113,6 +86,50 @@ function setEmotion(value, options = {}) {
   }, 170);
 
   return true;
+}
+
+function setSupportText(value) {
+  if (!supportText) {
+    return;
+  }
+
+  const text = String(value || "").trim();
+  supportText.textContent = text;
+  supportText.classList.toggle("has-text", text.length > 0);
+}
+
+function parseBackendMessage(data) {
+  const rawMessage = String(data || "").trim();
+
+  if (!rawMessage) {
+    return;
+  }
+
+  try {
+    const payload = JSON.parse(rawMessage);
+
+    if (payload && typeof payload === "object") {
+      if (payload.emotion) {
+        setEmotion(payload.emotion);
+      }
+
+      const text = payload.text ?? payload.label ?? payload.message;
+
+      if (text !== undefined) {
+        setSupportText(text);
+      }
+
+      return;
+    }
+  } catch (error) {
+    // Plain string messages are still supported.
+  }
+
+  if (setEmotion(rawMessage)) {
+    return;
+  }
+
+  setSupportText(rawMessage);
 }
 
 function pickTarget() {
@@ -254,96 +271,6 @@ function animate() {
   window.requestAnimationFrame(animate);
 }
 
-buttons.forEach((button) => {
-  button.addEventListener("click", () =>
-    setEmotion(button.dataset.emotion)
-  );
-});
-
-if (applyEmotionButton && emotionSelect) {
-  applyEmotionButton.addEventListener("click", () =>
-    setEmotion(emotionSelect.value)
-  );
-}
-
-if (emotionSelect) {
-  emotionSelect.addEventListener("change", () =>
-    setEmotion(emotionSelect.value)
-  );
-}
-
-if (testTransitionButton && transitionFromSelect && transitionToSelect) {
-  testTransitionButton.addEventListener("click", () => {
-    stopCycle();
-
-    const fromEmotion = transitionFromSelect.value;
-    const toEmotion = transitionToSelect.value;
-    const runNext = () => window.setTimeout(() => {
-      setEmotion(toEmotion);
-    }, 260);
-
-    if (fromEmotion === currentEmotion) {
-      runNext();
-      return;
-    }
-
-    setEmotion(fromEmotion, { onDone: runNext });
-  });
-}
-
-function getCycleDelay() {
-  const delay = Number(cycleDelayInput?.value || 1400);
-
-  return Number.isFinite(delay)
-    ? Math.min(Math.max(delay, 600), 6000)
-    : 1400;
-}
-
-function cycleNextEmotion() {
-  if (!isCycling) {
-    return;
-  }
-
-  const emotionList = Array.from(emotions);
-  const currentIndex = emotionList.indexOf(currentEmotion);
-  const nextEmotion = emotionList[(currentIndex + 1) % emotionList.length];
-
-  setEmotion(nextEmotion);
-  cycleTimer = window.setTimeout(cycleNextEmotion, getCycleDelay());
-}
-
-function startCycle() {
-  isCycling = true;
-  cycleEmotionsButton?.classList.add("is-running");
-
-  if (cycleEmotionsButton) {
-    cycleEmotionsButton.textContent = "Detener ciclo";
-  }
-
-  cycleNextEmotion();
-}
-
-function stopCycle() {
-  isCycling = false;
-  window.clearTimeout(cycleTimer);
-  cycleEmotionsButton?.classList.remove("is-running");
-
-  if (cycleEmotionsButton) {
-    cycleEmotionsButton.textContent = "Auto ciclo";
-  }
-}
-
-if (cycleEmotionsButton) {
-  cycleEmotionsButton.addEventListener("click", () => {
-    if (isCycling) {
-      stopCycle();
-      return;
-    }
-
-    startCycle();
-  });
-}
-
 window.addEventListener("keydown", (event) => {
   const keys = {
     "1": "sleepy",
@@ -376,7 +303,7 @@ function connectWebSocket() {
   });
 
   socket.addEventListener("message", (event) =>
-    setEmotion(event.data)
+    parseBackendMessage(event.data)
   );
 
   socket.addEventListener("close", () => {
@@ -400,6 +327,7 @@ try {
 }
 
 window.setEmotion = setEmotion;
+window.setSupportText = setSupportText;
 window.setEyeSize = (size) => {
   const nextSize = Number(size);
 
@@ -409,5 +337,5 @@ window.setEyeSize = (size) => {
 };
 
 scheduleTarget();
-updateDebugPanel(currentEmotion);
+updateSupportEmotion(currentEmotion);
 animate();
