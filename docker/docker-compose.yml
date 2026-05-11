@@ -1,0 +1,32 @@
+services:
+  chatbot_ia:
+
+    build:
+      context: .
+      dockerfile: Dockerfile
+
+    container_name: chatbot_ia
+
+    network_mode: host
+
+    privileged: true
+
+    stdin_open: true
+    tty: true
+
+    volumes:
+      - ../:/workspace
+
+      - /tmp/.X11-unix:/tmp/.X11-unix
+
+      - /dev/snd:/dev/snd
+
+    environment:
+      - DISPLAY=${DISPLAY}
+
+    devices:
+      - /dev/snd
+
+    working_dir: /workspace
+
+    command: bash

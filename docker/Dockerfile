@@ -3,21 +3,21 @@
 # ==============================
 FROM ros:jazzy
 
-# Evitar prompts interactivos
 ENV DEBIAN_FRONTEND=noninteractive
 
-
-RUN apt update && apt upgrade -y
 # ==============================
 # 🔧 DEPENDENCIAS DEL SISTEMA
 # ==============================
-RUN apt update && apt install -y \
+RUN apt update && apt upgrade -y && \
+    apt install -y \
     python3-pip \
+    python3-venv \
     alsa-utils \
     libasound2-dev \
     git \
     curl \
     nano \
+    vim \
     && rm -rf /var/lib/apt/lists/*
 
 # ==============================
@@ -26,29 +26,26 @@ RUN apt update && apt install -y \
 RUN pip install --no-cache-dir --break-system-packages \
     azure-cognitiveservices-speech \
     openai \
-    python-dotenv
+    python-dotenv \
+    websocket-client
 
 # ==============================
-# 📁 WORKSPACE
+# 📁 WORKDIR
 # ==============================
-WORKDIR /home/user
-
-# Crear carpeta de trabajo
-RUN mkdir -p /home/user/ros2_ws
+WORKDIR /workspace
 
 # ==============================
-# 🔊 CONFIGURACIÓN ALSA (IMPORTANTE)
+# 🔊 ALSA
 # ==============================
-# Esto puedes ajustarlo después según tu micrófono
 RUN echo 'pcm.!default { type plug slave.pcm "hw:2,0" }' > /etc/asound.conf && \
     echo 'ctl.!default { type hw card 2 }' >> /etc/asound.conf
 
 # ==============================
-# 🔁 CARGAR ROS AUTOMÁTICAMENTE
+# 🔁 ROS ENV
 # ==============================
 RUN echo "source /opt/ros/jazzy/setup.bash" >> /root/.bashrc
 
 # ==============================
-# 🚀 COMANDO POR DEFECTO
+# 🚀 DEFAULT
 # ==============================
 CMD ["bash"]
